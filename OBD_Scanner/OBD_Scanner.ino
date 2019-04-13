@@ -51,7 +51,7 @@ void loop()
           if(canId=0x70)
           {
         Serial.println("-----------------------------");
-        Serial.print("Data from ID: 0x");
+        Serial.print("Data from CAN ID: 0x");
         Serial.println(canId, HEX);
           
         for(int i = 0; i<len; i++)
