@@ -2,12 +2,10 @@
 #include<ESP8266WiFi.h>
 #include<ESP8266WebServer.h>
 #include<ESP8266HTTPClient.h>
-#include<ArduinoJson.h>
 #include <SPI.h>
 
 #include "acQuisor_WiFi.h"
 #include "mcp_can.h"
-#include "FS.h"
 
 char *host="172.22.25.3";
 const int httpPort=80;
@@ -15,18 +13,15 @@ const int httpPort=80;
 String serverResponse, Cdate;
 ESP8266WebServer server(80);
 
-String customerName="",motorName="";
+String customerName="";
 
-String wifiSsid = "priyen1", wifiPass = "12345678", apSsid = "obd_acQuisor", apPass = "acquisor123";
+String wifiSsid = "BOYS_HOSTEL", wifiPass = "computer12345", apSsid = "obd_acQuisor", apPass = "acquisor123";
 acQuisorWiFi acqWifi(wifiSsid, wifiPass, apSsid, apPass, host);
 
 void clearDTC();
 void handleRoot();
 void handleEdit();
 void handleSuccess();
-
-bool loadConfig();
-bool saveConfig();
 
 bool canReceive();
 const int spiCSPin=D8;
@@ -39,13 +34,6 @@ void setup()
     Serial.begin(115200);
     pinMode(LED_BUILTIN,OUTPUT);
     
-    Serial.println("Mounting FS...");
-    if (!SPIFFS.begin()) 
-    {
-      Serial.println("Failed to mount file system");
-      return;
-    }
-
     Serial.print("Configuring access point...");
     WiFi.softAP(acqWifi.device_SSID.c_str(), acqWifi.device_PASS.c_str());
     IPAddress myIP = WiFi.softAPIP();
@@ -57,19 +45,6 @@ void setup()
     server.on("/edit", handleEdit); //Associate the handler function to the path
     server.on("/success", handleSuccess);
     server.begin();
-
-    if(!(loadConfig()))
-    {
-      Serial.println("\n Flash memory didnt load");
-    }
-    else
-    {
-      Serial.println("\n Flash data imported successfully");
-    }
-    Serial.println("\n Recovered data: ");
-    Serial.println(acqWifi.customerWifiSsid);
-    Serial.println(acqWifi.customerWifiPass);
-    Serial.println(customerName);
 
     if(acqWifi.customerWifiSsid!="default"&&acqWifi.customerWifiSsid!="")
     acqWifi.Wconnect();
@@ -101,8 +76,7 @@ void loop()
 {
   unsigned char len = 0;
   unsigned char buf[8];
-  String Speed, Rpm, engineLoad, throttle, dtc;
-  
+  String obdData="";
   server.handleClient();
   while(acqWifi.customerWifiSsid=="default"||acqWifi.customerWifiSsid=="")
   {
@@ -129,14 +103,18 @@ void loop()
         
       for(int i = 0; i<len; i++)
       {
+            String s2=String(buf[i],HEX);
+            if(s2.length()==1)
+            {
+              obdData+="0";
+            }
+            obdData+=String(buf[i],HEX);
         Serial.print(buf[i],HEX);
         Serial.print("\t");
         
         if(i==0 && buf[i]==0X43)
         {
           flag=0;
-          if(buf[i]==0x43)
-            dtc = buf;
         }
          
           if(i==1)
@@ -144,22 +122,20 @@ void loop()
               if(buf[i]==0x0D)
               {
                 flag=1;
-                Speed=buf;
+            
               }
               else if(buf[i]==0x0C)
               {
                 flag=2;
-                Rpm=buf;
               }
               else if(buf[i]==0x04)
               {
                 flag=3;
-                engineLoad=buf
               }
+              
               else if(buf[i]==0x11)
               {
                 flag=4;
-                throttle=buf;
               }
            } 
         }
@@ -176,7 +152,7 @@ void loop()
       
       HTTPClient http;
       
-      acqWifi.generateURL(customerName, motorName, Cdate, btryLvl, motorStatus);
+      acqWifi.generateURL(customerName,obdData,Cdate);
       Serial.println(acqWifi.url);
       
       http.begin(acqWifi.url);
@@ -233,9 +209,8 @@ void loop()
       CAN.sendMsgBuf(0x71, 0, 8, stmp4);
     }
     delay(1000);
-
-    
 }
+
 void clearDTC()
 {
  String htmlCode;
@@ -280,91 +255,29 @@ bool canReceive()
         }
     }
 }
+
 void handleSuccess()
 {
   
-  motorName = String(server.arg("motorName"));
   acqWifi.customerWifiSsid = String(server.arg("customerWifiSsid"));
   acqWifi.customerWifiPass = String(server.arg("customerWifiPass"));
   customerName = String(server.arg("customerName"));
   
-  if(!(saveConfig()))
-    Serial.println("\n Data not saved to Flash");
-  else
-    Serial.println("\n Data saved on Flash");
-
   acqWifi.Wconnect();
 
-  String message = "<br><br><center><h1>The Tank details have been successfully updated.</h1><br><br> The Water acQuisor Sensor is connected to: ";
+  String message = "<br><br><center><h1>The OBD details have been successfully updated.</h1><br><br> The OBD is connected to: ";
   message += acqWifi.customerWifiSsid;
-  message += "<br><br>The IP address of tank is: ";
+  message += "<br><br>The IP address of OBD is: ";
   message += acqWifi.deviceIP;
-  message += "<br><br>The tank is named as: ";
-  message += motorName;
-  message += "<br><br><li><a href='http://172.22.25.3/water/'>Visit website for management and control</a></li><br><li><b>Contact us at: 1505051@ritindia.edu</b></li>";
+  message += "<br><br><li><a href='http://172.22.25.3/obd/'>Visit website for management and control</a></li><br><li><b>Contact us at: 1505051@ritindia.edu</b></li>";
   message += "</center>";
   delay(500);
   server.send(200, "text/html", message);
 }
+
 void handleRoot()
 {
-  String message2 = "<center><h1> Welcome to Water acQuisor </h1><br><br><li><a href = '/edit'> Setup the Water acQuisor </a></li><br><li><a href = '/deviceStatus'> View device status and parameters</a></li><br><br> Thank you for buying Water acQuisor.<br><br><b>Contact us at 1505051@ritindia.edu </b></center>";
+  String message2 = "<center><h1> Welcome to acQuisor OBD </h1><br><br><li><a href = '/edit'> Setup the acQuisor OBD </a></li><br><li><a href = '/deviceStatus'> View device status and parameters</a></li><br><br> Thank you for buying acQuisor OBD.<br><br><b>Contact us at 1505051@ritindia.edu </b></center>";
 
   server.send(200, "text/html", message2);
 }
-bool loadConfig()
-{
-  File configFile = SPIFFS.open("/config.json", "r");
-  if (!configFile) {
-    Serial.println("Failed to open config file");
-    return false;
-  }
-
-  size_t size = configFile.size();
-  if (size > 1024) {
-    Serial.println("Config file size is too large");
-    return false;
-  }
-  
-  std::unique_ptr<char[]> buf(new char[size]);
-
-  configFile.readBytes(buf.get(), size);
-
-  StaticJsonBuffer<200> jsonBuffer;
-  JsonObject& json = jsonBuffer.parseObject(buf.get());
-
-  if (!json.success()) {
-    Serial.println("Failed to parse config file");
-    return false;
-  }
-
-  String customerWifiSsidr = json["Wssid"];
-  String customerWifiPassr = json["Wpass"];
-  String customerNamer = json["cname"];
-
-  acqWifi.customerWifiSsid = customerWifiSsidr;
-  acqWifi.customerWifiPass = customerWifiPassr;
-  customerName = customerNamer;
-  
-  return true;
-}
-  
-bool saveConfig()
-{
-  StaticJsonBuffer<200> jsonBuffer;
-  JsonObject& json = jsonBuffer.createObject();
-  json["Wssid"] = acqWifi.customerWifiSsid;
-  json["Wpass"] = acqWifi.customerWifiPass;
-  json["cname"] = customerName;
-
-  File configFile = SPIFFS.open("/config.json", "w");
-  if (!configFile) {
-    Serial.println("Failed to open config file for writing");
-    return false;
-  }
-
-  json.printTo(configFile);
-  return true;
-}
-
-

@@ -1,4 +1,4 @@
-#include "acQuisor_WiFi_motor.h"
+#include "acQuisor_WiFi.h"
 #include<ESP8266WiFi.h>
 acQuisorWiFi::acQuisorWiFi(String WiFiSsid, String WiFiPass, String AP_ssid, String AP_pass, String host)
 {
@@ -29,21 +29,15 @@ void acQuisorWiFi::Wconnect()
 }
 
 
-void acQuisorWiFi::generateURL(String customerName, String Rpm, String Speed, String engineLoad, String throttle, String dtc, String Cdate)
+void acQuisorWiFi::generateURL(String customerName, String obdData, String Cdate)
 {
   String u = "http://";
   u += server;
   u += "/obd/embeddedGateway/dataFromObdScanner.php";
   u += "?customerName=";
   u += customerName;
-  u += "&rpm=";
-  u += Rpm;
-  u += "&speed=";
-  u += Speed;
-  u += "&load=";
-  u += engineLoad;
-  u += "&throttle=";
-  u += throttle;
+  u += "&obdData=";
+  u += obdData;
   u += "&cdate=";
   u += Cdate;
   u += "&IP=";
@@ -52,4 +46,3 @@ void acQuisorWiFi::generateURL(String customerName, String Rpm, String Speed, St
   u += customerWifiSsid;
   url = u;
 }
-
