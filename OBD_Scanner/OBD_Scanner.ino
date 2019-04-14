@@ -60,7 +60,7 @@ void loop()
         {
             Serial.print(buf[i],HEX);
             Serial.print("\t");
-            if(i==0 && buf[i]==0X43 && flag==4)
+            if(i==0 && buf[i]==0X43)
             {
               flag=0;
             }
@@ -115,5 +115,5 @@ void loop()
         Serial.println("\nRequesting DTC code");
         CAN.sendMsgBuf(0x71, 0, 8, stmp4);
       }
-      delay(100);
+      delay(1000);
 }
