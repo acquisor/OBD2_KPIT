@@ -275,6 +275,12 @@ void handleSuccess()
   server.send(200, "text/html", message);
 }
 
+void handleEdit()
+{
+  String htmlCode = "<center><h1>Setup your OBD scanner here</h1><br><br><form method='get' action='success'><table><tr><td>Default customer name:</td><td><input type='text' name='customerName' placeholder='username_in_website' value='priyen'/></td></tr><tr><td> WIFI_SSID: </td><td><input type='text' name='customerWifiSsid' placeholder='Name of hotspot to connect' value='ap_comp_engg'/></td></tr><tr><td>Password: </td><td><input type='password' name='customerWifiPass' placeholder='Password of hotspot' value='computer12345'/></td></tr></table><br><input type='submit' value='update details'/></form></center>";
+  server.send(200, "text/html", htmlCode);
+}
+
 void handleRoot()
 {
   String message2 = "<center><h1> Welcome to acQuisor OBD </h1><br><br><li><a href = '/edit'> Setup the acQuisor OBD </a></li><br><li><a href = '/deviceStatus'> View device status and parameters</a></li><br><br> Thank you for buying acQuisor OBD.<br><br><b>Contact us at 1505051@ritindia.edu </b></center>";
