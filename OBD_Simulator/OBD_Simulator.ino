@@ -18,7 +18,8 @@ void handleEdit();
 void handleSuccess();
 
 String speedHex, rpmAHex, rpmBHex, throttleHex, loadHex, DTCflag;
-
+String s="0X";
+unsigned char Speed,RpmA,RpmB,Throttle,Load;
 unsigned char stmp[8]  = {0X41,0X0D,0X43,0X12,0X55,0X55,0X55,0X55};   // Vehicle Speed
 unsigned char stmp1[8] = {0X41,0X0C,0XAA,0X88,0X55,0X55,0X55,0X55};   // RPM
 unsigned char stmp2[8] = {0X41,0X04,0X54,0X47,0X55,0X55,0X55,0X55};   // Engine Load
@@ -52,6 +53,15 @@ void setup()
 void loop()
 {   
   server.handleClient();
+
+  unsigned char stmp[8]  = {0X41,0X0D,Speed,0X55,0X55,0X55,0X55,0X55};   // Vehicle Speed
+  unsigned char stmp1[8] = {0X41,0X0C,RpmA,RpmB,0X55,0X55,0X55,0X55};   // RPM
+  unsigned char stmp2[8] = {0X41,0X04,Load,0X55,0X55,0X55,0X55,0X55};   // Engine Load
+  unsigned char stmp3[8] = {0X41,0X11,Throttle,0X55,0X55,0X55,0X55,0X55};   // Throttle Position   
+  unsigned char stmp4[8] = {0x43,0X06,0X54,0X41,0X61,0X81,0X60,0X00};   // p0654-rpm op ckt failure,C0161-abs/tcs brake sw ckt malfunction ,b0160 - ambient air temp sensor ckt
+  unsigned char stmp5[8] = {0X43,0X00,0X00,0X00,0X00,0X00,0X00,0X00};   // No DTC Response
+  unsigned char stmp6[8] = {0X44,0X00,0X00,0X00,0X00,0X00,0X00,0X00};   // DTC Cleared Response
+
   if(CAN_MSGAVAIL == CAN.checkReceive())
   {
 
@@ -132,6 +142,26 @@ void data()
   throttleHex = String(server.arg("throttle"));
   loadHex = String(server.arg("load"));
   DTCflag = String(server.arg("dtc"));
+
+  s+= speedHex;
+  s.toCharArray(Speed,1);
+  s="";
+
+  s+= rpmAHex;
+  s.toCharArray(RpmA,1);
+  s="";
+
+  s+= rpmBHex;
+  s.toCharArray(RpmB,1);
+  s="";
+
+  s+= throttleHex;
+  s.toCharArray(Throttle,1);
+  s="";
+
+  s+= loadHex;
+  s.toCharArray(Load,1);
+  s="";
   
   if(DTCflag=="true")
     DTCflag="1";
@@ -150,6 +180,7 @@ void data()
   msg += rpmBHex;
   msg += ", \tDTC: ";
   msg += DTCflag;
+  
 
   Serial.println("Simulation details received: ");
   Serial.println(msg);
