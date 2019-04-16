@@ -16,7 +16,7 @@ class acQuisorWiFi
   String deviceIP, customerWifiSsid, customerWifiPass, device_SSID, device_PASS, url, server;
   void Wconnect();
 
-  void generateURL(String customerName, String obdData, String Cdate);
+  void generateURL(String customerName, String speedData, String rpmData, String loadData, String throttleData, String dtcData);
 };
 
 #endif

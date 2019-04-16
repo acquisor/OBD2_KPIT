@@ -29,17 +29,23 @@ void acQuisorWiFi::Wconnect()
 }
 
 
-void acQuisorWiFi::generateURL(String customerName, String obdData, String Cdate)
+void acQuisorWiFi::generateURL(String customerName, String speedData, String rpmData, String loadData, String throttleData, String dtcData)
 {
   String u = "http://";
   u += server;
   u += "/obd/embeddedGateway/dataFromObdScanner.php";
   u += "?customerName=";
   u += customerName;
-  u += "&obdData=";
-  u += obdData;
-  u += "&cdate=";
-  u += Cdate;
+  u += "&speedData=";
+  u += speedData;
+  u += "&rpmData=";
+  u += rpmData;
+  u += "&loadData=";
+  u += loadData;
+  u += "&throttleData=";
+  u += throttleData;
+  u += "&dtcData=";
+  u += dtcData;
   u += "&IP=";
   u += deviceIP;
   u += "&customerWifiSsid=";
