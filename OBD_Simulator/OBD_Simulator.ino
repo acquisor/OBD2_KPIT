@@ -18,8 +18,12 @@ void handleEdit();
 void handleSuccess();
 
 String speedHex, rpmAHex, rpmBHex, throttleHex, loadHex, DTCflag;
+<<<<<<< HEAD
 String s="0X";
 unsigned char Speed,RpmA,RpmB,Throttle,Load;
+=======
+
+>>>>>>> f311680dd7da0b60edd0364ab95efdbdc8f5c7d6
 unsigned char stmp[8]  = {0X41,0X0D,0X43,0X12,0X55,0X55,0X55,0X55};   // Vehicle Speed
 unsigned char stmp1[8] = {0X41,0X0C,0XAA,0X88,0X55,0X55,0X55,0X55};   // RPM
 unsigned char stmp2[8] = {0X41,0X04,0X54,0X47,0X55,0X55,0X55,0X55};   // Engine Load
@@ -53,6 +57,7 @@ void setup()
 void loop()
 {   
   server.handleClient();
+<<<<<<< HEAD
 
   unsigned char stmp[8]  = {0X41,0X0D,Speed,0X55,0X55,0X55,0X55,0X55};   // Vehicle Speed
   unsigned char stmp1[8] = {0X41,0X0C,RpmA,RpmB,0X55,0X55,0X55,0X55};   // RPM
@@ -62,6 +67,8 @@ void loop()
   unsigned char stmp5[8] = {0X43,0X00,0X00,0X00,0X00,0X00,0X00,0X00};   // No DTC Response
   unsigned char stmp6[8] = {0X44,0X00,0X00,0X00,0X00,0X00,0X00,0X00};   // DTC Cleared Response
 
+=======
+>>>>>>> f311680dd7da0b60edd0364ab95efdbdc8f5c7d6
   if(CAN_MSGAVAIL == CAN.checkReceive())
   {
 
@@ -132,6 +139,7 @@ void loop()
         delay(500);
   }
   
+<<<<<<< HEAD
 }
 
 void data()
@@ -189,8 +197,46 @@ void data()
 
 }
 
+=======
+}
+
+void data()
+{
+  speedHex = String(server.arg("speed"));
+  rpmAHex = String(server.arg("rpma"));
+  rpmBHex = String(server.arg("rpmb"));
+  throttleHex = String(server.arg("throttle"));
+  loadHex = String(server.arg("load"));
+  DTCflag = String(server.arg("dtc"));
+  
+  if(DTCflag=="true")
+    DTCflag="1";
+   else
+    DTCflag="0";
+
+  String msg = "Speed:";
+  msg += speedHex;
+  msg += ", \tThrottle: ";
+  msg += throttleHex;
+  msg += ", \tEngine Load: ";
+  msg += loadHex;
+  msg += ", \nRPM_A: ";
+  msg += rpmAHex;
+  msg += ", \tRPM_B: ";
+  msg += rpmBHex;
+  msg += ", \tDTC: ";
+  msg += DTCflag;
+
+  Serial.println("Simulation details received: ");
+  Serial.println(msg);
+  
+  server.send(200, "text/html", msg);  
+
+}
+>>>>>>> f311680dd7da0b60edd0364ab95efdbdc8f5c7d6
 void handleRoot()
 {
   String message2 = "<center><h1> Welcome to acQuisor OBD simulator </h1><br><br> Thank you for buying acQuisor OBD.<br><br><b>Contact us at 1505051@ritindia.edu </b></center>";
   server.send(200, "text/html", message2);
 }
+
