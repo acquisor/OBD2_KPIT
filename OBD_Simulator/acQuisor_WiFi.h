@@ -1,5 +1,5 @@
-#ifndef acQuisor_WiFi_motor
-#define acQuisor_WiFi_motor
+#ifndef acQuisor_WiFi
+#define acQuisor_WiFi
 
 #if (ARDUINO >= 100)
   #include "Arduino.h"

@@ -1,38 +1,37 @@
-
 /*CAN Transmitter*/
 #include<ESP8266WiFi.h>
 #include<ESP8266WebServer.h>
+
 #include <SPI.h>
 #include <mcp_can.h>
 
+#include "acQuisor_WiFi.h"
+
+char *host = "172.22.25.3";
+const int httpPort = 80;
+
 ESP8266WebServer server(80);
 
+String wifiSsid = "anjali", wifiPass = "12345678", apSsid = "OBD_Simulator", apPass = "acquisor123";
+acQuisorWiFi acqWifi(wifiSsid, wifiPass, apSsid, apPass, host);
+
 const int spiCSPin = D8;
-boolean ledON = 1;
 
 MCP_CAN CAN(spiCSPin);
 
-void clearDTC();
+void data();
 void handleRoot();
-void handleEdit();
-void handleSuccess();
 
-String speedHex, rpmAHex, rpmBHex, throttleHex, loadHex, DTCflag;
+String speedDec, rpmADec, rpmBDec, throttleDec, loadDec, DTCflag;
 
-unsigned char stmp[8]  = {0X41,0X0D,0X43,0X12,0X55,0X55,0X55,0X55};   // Vehicle Speed
-unsigned char stmp1[8] = {0X41,0X0C,0XAA,0X88,0X55,0X55,0X55,0X55};   // RPM
-unsigned char stmp2[8] = {0X41,0X04,0X54,0X47,0X55,0X55,0X55,0X55};   // Engine Load
-unsigned char stmp3[8] = {0X41,0X11,0X69,0X09,0X55,0X55,0X55,0X55};   // Throttle Position
-unsigned char stmp4[8] = {0x43,0X06,0X54,0X41,0X61,0X81,0X60,0X00};   // p0654-rpm op ckt failure,C0161-abs/tcs brake sw ckt malfunction ,b0160 - ambient air temp sensor ckt
-unsigned char stmp5[8] = {0X43,0X00,0X00,0X00,0X00,0X00,0X00,0X00};   // No DTC Response
-unsigned char stmp6[8] = {0X44,0X00,0X00,0X00,0X00,0X00,0X00,0X00};   // DTC Cleared Response
+byte Speed,RpmA,RpmB,Throttle,Load;
 
 void setup()
 {
     Serial.begin(115200);
 
     Serial.print("Configuring access point...");
-    WiFi.softAP("OBD_Simulator", "acquisor123");
+    WiFi.softAP(acqWifi.device_SSID.c_str(), acqWifi.device_PASS.c_str());
     IPAddress myIP = WiFi.softAPIP();
     Serial.print("AP IP address: ");
     Serial.println(myIP);
@@ -40,11 +39,14 @@ void setup()
     server.on("/", handleRoot);
     server.on("/androdata",data);
     server.begin();
-    
-    if(CAN_OK != CAN.begin(CAN_500KBPS))
+
+    if (acqWifi.customerWifiSsid != "default" && acqWifi.customerWifiSsid != "")
+      acqWifi.Wconnect();
+
+    while(CAN_OK != CAN.begin(CAN_500KBPS))
     {
         Serial.println("CAN BUS init Failed");
-        delay(100);
+      //  delay(100);
     }
     Serial.println("CAN BUS Shield Init OK!");
 }
@@ -52,6 +54,42 @@ void setup()
 void loop()
 {   
   server.handleClient();
+
+  unsigned char stmp[8]  = {0X41,0X0D,Speed,0X55,0X55,0X55,0X55,0X55};   // Vehicle Speed
+  unsigned char stmp1[8] = {0X41,0X0C,RpmA,RpmB,0X55,0X55,0X55,0X55};   // RPM
+  unsigned char stmp2[8] = {0X41,0X04,Load,0X55,0X55,0X55,0X55,0X55};   // Engine Load
+  unsigned char stmp3[8] = {0X41,0X11,Throttle,0X55,0X55,0X55,0X55,0X55};   // Throttle Position   
+  unsigned char stmp4[8] = {0x43,0X06,0X54,0X41,0X61,0X81,0X60,0X00};   // p0654-rpm op ckt failure,C0161-abs/tcs brake sw ckt malfunction ,b0160 - ambient air temp sensor ckt
+  unsigned char stmp5[8] = {0X43,0X00,0X00,0X00,0X00,0X00,0X00,0X00};   // No DTC Response
+  unsigned char stmp6[8] = {0X44,0X00,0X00,0X00,0X00,0X00,0X00,0X00};   // DTC Cleared Response
+  
+  Serial.print("\nSpeed CAN Frame: ");  
+  for(int j=0;j<8;j++)
+  {
+      Serial.print(stmp[j]);
+      Serial.print("\t");  
+  }
+  
+  Serial.print("\nRPM CAN Frame: ");  
+  for(int j=0;j<8;j++)
+  {
+      Serial.print(stmp1[j]);
+      Serial.print("\t");  
+  }
+
+  Serial.print("\nEngine Load CAN Frame: ");  
+  for(int j=0;j<8;j++)
+  {
+      Serial.print(stmp2[j]);
+      Serial.print("\t");  
+  }
+
+  Serial.print("\nThrottle CAN Frame: ");  
+  for(int j=0;j<8;j++)
+  {
+      Serial.print(stmp3[j]);
+      Serial.print("\t");  
+  }
   if(CAN_MSGAVAIL == CAN.checkReceive())
   {
 
@@ -119,35 +157,60 @@ void loop()
         }
     }
         Serial.println();
-        delay(500);
+        delay(100);
   }
   
 }
 
 void data()
 {
-  speedHex = String(server.arg("speed"));
-  rpmAHex = String(server.arg("rpma"));
-  rpmBHex = String(server.arg("rpmb"));
-  throttleHex = String(server.arg("throttle"));
-  loadHex = String(server.arg("load"));
+  speedDec = String(server.arg("speed"));
+  rpmADec = String(server.arg("rpma"));
+  rpmBDec = String(server.arg("rpmb"));
+  throttleDec = String(server.arg("throttle"));
+  loadDec = String(server.arg("load"));
   DTCflag = String(server.arg("dtc"));
+
+  
+  Speed=speedDec.toInt();
+  RpmA=rpmADec.toInt();
+  RpmB=rpmBDec.toInt();
+  Throttle=throttleDec.toInt();
+  Load=loadDec.toInt();
+
+  Serial.print("Speed: ");
+  Serial.println(Speed);
+  Serial.print("RpmA: ");
+  Serial.println(RpmA);
+  Serial.print("RpmB: ");
+  Serial.println(RpmB);
+  Serial.print("Load: ");
+  Serial.println(Load);
+  Serial.print("Throttle: ");
+  Serial.println(Throttle);
   
   if(DTCflag=="true")
+  {
     DTCflag="1";
+    Serial.print("\n DTC is Set!!");
+  }
+    
    else
-    DTCflag="0";
-
+   {
+     DTCflag="0";
+     Serial.print("\n DTC is Cleared!!");
+   }
+   
   String msg = "Speed:";
-  msg += speedHex;
+  msg += speedDec;
   msg += ", \tThrottle: ";
-  msg += throttleHex;
+  msg += throttleDec;
   msg += ", \tEngine Load: ";
-  msg += loadHex;
+  msg += loadDec;
   msg += ", \nRPM_A: ";
-  msg += rpmAHex;
+  msg += rpmADec;
   msg += ", \tRPM_B: ";
-  msg += rpmBHex;
+  msg += rpmBDec;
   msg += ", \tDTC: ";
   msg += DTCflag;
 
@@ -157,9 +220,12 @@ void data()
   server.send(200, "text/html", msg);  
 
 }
+
 void handleRoot()
 {
-  String message2 = "<center><h1> Welcome to acQuisor OBD simulator </h1><br><br> Thank you for buying acQuisor OBD.<br><br><b>Contact us at 1505051@ritindia.edu </b></center>";
+  String message2 = "<center><h1> Welcome to acQuisor OBD simulator </h1><br><br> The IP address of your simulator is:" ;
+  message2 += acqWifi.deviceIP;
+  message2 += "<br><br>Thank you for buying acQuisor OBD.<br><br><b>Contact us at 1505051@ritindia.edu </b></center>";
+  
   server.send(200, "text/html", message2);
 }
-

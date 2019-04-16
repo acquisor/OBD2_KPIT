@@ -14,7 +14,7 @@ void acQuisorWiFi::Wconnect()
   deviceIP="";
   //server.handleClient();
   WiFi.begin(customerWifiSsid.c_str(), customerWifiPass.c_str());
-
+  
   while (WiFi.status() != WL_CONNECTED)
   {
     Serial.print(".");
@@ -26,6 +26,9 @@ void acQuisorWiFi::Wconnect()
   deviceIP += String(WiFi.localIP()[1]) + String('.');
   deviceIP += String(WiFi.localIP()[2]) + String('.');
   deviceIP += String(WiFi.localIP()[3]);
+
+  Serial.println(deviceIP);
+  delay(4000);
 }
 
 
