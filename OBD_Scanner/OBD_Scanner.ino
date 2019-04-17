@@ -15,7 +15,7 @@ ESP8266WebServer server(80);
 
 String customerName = "priyen";
 
-String wifiSsid = "anjali", wifiPass = "12345678", apSsid = "obd_acQuisor", apPass = "acquisor123";
+String wifiSsid = "anjali", wifiPass = "12345678", apSsid = "OBD_Scanner", apPass = "acquisor123";
 acQuisorWiFi acqWifi(wifiSsid, wifiPass, apSsid, apPass, host);
 
 void clearDTC();
@@ -65,6 +65,7 @@ unsigned char stmp4[8] = {0x03, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00}; //DTC
 unsigned char stmp5[8] = {0x04, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00}; //Clear DTC
 int dataReceivedCount = 0;
 String speedData = "", rpmData = "", loadData = "", throttleData = "", dtcData = "";
+
 void wait()
 {
   digitalWrite(D4, 1);
@@ -176,7 +177,6 @@ void loop()
   else if (flag == 3)
   {
     loadData = obdData;
-
     Serial.println("\nRequesting Throttle Position Data");
     CAN.sendMsgBuf(0x71, 0, 8, stmp3);
     dataReceivedCount++;
@@ -185,7 +185,6 @@ void loop()
   else if (flag == 4)
   {
     throttleData = obdData;
-
     Serial.println("\nRequesting DTC code");
     CAN.sendMsgBuf(0x71, 0, 8, stmp4);
     dataReceivedCount++;
@@ -228,9 +227,7 @@ void loop()
     Serial.print("\n Response from server: ");
     Serial.println(cmd);
   }
-
-
-  delay(1000);
+  delay(100);
 }
 
 void clearDTC()
